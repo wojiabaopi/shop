@@ -4,8 +4,8 @@
       <div class="img-warpper">
         <img src="../assets/img/vue.jpg" alt="">
       </div>
-      <el-form :model="form"  class="login_form" label-width="50px">
-        <el-form-item >
+      <el-form  :model="form"  class="login_form" label-width="50px">
+        <el-form-item  prop="name">
           <el-input placeholder="请输入账号" v-model="form.username" prefix-icon="el-icon-user-solid"></el-input>
         </el-form-item>
         <el-form-item  >
@@ -41,7 +41,6 @@
       login(){
         this.$http.post('/login',this.form).then( res => {
           this.info = res.data.meta
-          console.log(res);
           if(this.info.status == 200){
             window.sessionStorage.setItem('token',res.data.data.token)
             this.$router.push('/home')
