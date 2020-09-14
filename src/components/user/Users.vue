@@ -53,10 +53,11 @@
           <el-table-column
             label="操作">
             <template width="180px" v-slot="scope">
-              <el-button @click="selectUserInfo(scope.row.id)" size="mini" type="primary" icon="el-icon-edit"></el-button>
+              <el-button @click="selectUserInfo(scope.row.id)" size="mini" type="primary"
+                         icon="el-icon-edit"></el-button>
               <el-button @click="deleteUser(scope.row.id)" size="mini" type="danger" icon="el-icon-delete"></el-button>
               <el-tooltip class="item" :enterable="false" effect="dark" content="分配角色" placement="top">
-                <el-button size="mini" type="warning" icon="el-icon-setting"></el-button>
+                <el-button @click="setRole(scope.row)" size="mini" type="warning" icon="el-icon-setting"></el-button>
               </el-tooltip>
             </template>
           </el-table-column>
@@ -106,7 +107,7 @@
       :visible.sync="editdialogVisible"
       width="50%">
       <el-form :model="editUserInfo" :rules="editrules" ref="editFormref" label-width="70px">
-        <el-form-item label="用户名" >
+        <el-form-item label="用户名">
           <el-input disabled v-model="editUserInfo.username"></el-input>
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -119,6 +120,32 @@
       <span slot="footer" class="dialog-footer">
     <el-button @click="editdialogVisible = false">取 消</el-button>
     <el-button type="primary" @click="editUser">确 定</el-button>
+  </span>
+    </el-dialog>
+
+
+    <el-dialog
+      title="分配角色"
+      :visible.sync="setdialogVisible"
+      width="50%">
+      <div>
+        <p>当前的用户：{{userInfo.username}}</p>
+        <p>当前的角色：{{userInfo.role_name}}</p>
+        <p>
+          分配角色：
+          <el-select @close="reset" v-model="value" placeholder="请选择">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id">
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+    <el-button @click="setdialogVisible = false">取 消</el-button>
+    <el-button type="primary" @click="saveRole">确 定</el-button>
   </span>
     </el-dialog>
 
@@ -152,11 +179,12 @@
           pagesize: 2
         },
         total: 0,
+        value: '',
         userlist: [],
         dialogVisible: false,
         editdialogVisible: false,
         editrules: {
-          emial:[
+          emial: [
             {required: true, message: '请输入邮箱', trigger: 'blur'},
             {min: 6, max: 20, message: '长度为3-10'},
             {
@@ -201,7 +229,10 @@
               validator: checkMobile, trigger: 'blur'
             }
           ]
-        }
+        },
+        userInfo: {},
+        roleList: [],
+        setdialogVisible: false
       }
     },
     methods: {
@@ -213,6 +244,40 @@
           }
         })
       },
+      reset() {
+        this.value = ''
+        this.userInfo = {}
+      },
+      saveRole() {
+        if (!this.value){
+          this.$msg({
+            type: 'warning',
+            message: '请选择角色',
+            offset: 200
+          })
+        } else {
+          this.$http.put(`/users/${this.userInfo.id}/role`,{
+            rid: this.value
+          }).then( res => {
+            if(res.data.meta.status != 200){
+              this.$msg({
+                type: 'info',
+                message: res.data.meta.msg,
+                offset: 200
+              })
+            } else {
+              this.$msg({
+                type: 'success',
+                message: res.data.meta.msg,
+                offset: 200
+              })
+
+            }
+          })
+        }
+          this.setdialogVisible = false
+      }
+      ,
       handleSizeChange(newSize) {
         this.queryinfo.pagesize = newSize
         this.selectuser()
@@ -241,7 +306,7 @@
         // this.addForm.mobile = ''
         this.$refs.addFormref.resetFields()
       },
-      before2(){
+      before2() {
         this.$refs.editFormref.resetFields()
       },
       addUser() {
@@ -267,29 +332,29 @@
           })
         })
       },
-      selectUserInfo(id){
-        this.$http.get('/users/' + id).then( res =>{
+      selectUserInfo(id) {
+        this.$http.get('/users/' + id).then(res => {
           this.editUserInfo = res.data.data
         })
         this.editdialogVisible = true
       },
-      editUser(){
+      editUser() {
         this.$refs.editFormref.validate(res => {
-          if(!res) return
+          if (!res) return
 
-          this.$http.put('/users/' + this.editUserInfo.id,{
+          this.$http.put('/users/' + this.editUserInfo.id, {
             email: this.editUserInfo.email,
             mobile: this.editUserInfo.mobile
           }).then(res => {
 
-            if(res.data.meta.status == 200){
+            if (res.data.meta.status == 200) {
               this.selectuser()
               this.$msg({
                 type: 'success',
                 message: res.data.meta.msg,
                 offset: 200
               })
-            } else{
+            } else {
               this.$msg({
                 type: 'error',
                 message: '更新失败',
@@ -300,14 +365,14 @@
           this.editdialogVisible = false
         })
       },
-      deleteUser(id){
+      deleteUser(id) {
         this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
           this.$http.delete('/users/' + id).then(res => {
-            if(res.data.meta.status == 200){
+            if (res.data.meta.status == 200) {
               this.selectuser()
               this.$msg({
                 type: 'success',
@@ -320,6 +385,7 @@
                 message: res.data.meta.msg,
                 offset: 200
               })
+              this.selectuser()
             }
           })
         }).catch(() => {
@@ -329,6 +395,16 @@
             offset: 200
           });
         });
+      },
+      setRole(user) {
+        this.userInfo = user
+
+        this.$http.get('/roles').then(res => {
+          if (res.data.meta.status == 200) {
+            this.roleList = res.data.data
+          }
+        })
+        this.setdialogVisible = true
       }
     },
     created() {
