@@ -9,7 +9,7 @@
           <el-input placeholder="请输入账号" v-model="form.username" prefix-icon="el-icon-user-solid"></el-input>
         </el-form-item>
         <el-form-item  >
-          <el-input placeholder="请输入密码" show-password v-model="form.password" prefix-icon="el-icon-shopping-bag-2"></el-input>
+          <el-input @keyup.enter.native="login" placeholder="请输入密码" show-password v-model="form.password" prefix-icon="el-icon-shopping-bag-2"></el-input>
         </el-form-item>
         <el-form-item class="form_button">
           <el-button @click="login" style="margin-left: -20px" type="primary" >登录</el-button>
@@ -17,7 +17,6 @@
         </el-form-item>
       </el-form>
     </div>
-
   </div>
 </template>
 
